@@ -1,0 +1,31 @@
+<nav class="solar-nav" [class.visible]="isVisible" aria-label="Section navigation">
+  <!-- Orbit track line -->
+  <div class="orbit-track"></div>
+
+  <!-- Spacecraft indicator -->
+  <div class="spacecraft" [style.top.px]="spacecraftTop">
+    <span class="spacecraft-icon">🚀</span>
+    <div class="spacecraft-trail"></div>
+  </div>
+
+  <!-- Planet dots -->
+  <div class="planets">
+    <button
+      *ngFor="let planet of planets; let i = index"
+      class="planet-btn"
+      [class.active]="i === activeIndex"
+      [class.visited]="i < activeIndex"
+      [style.--planet-color]="planet.color"
+      (click)="navigateTo(planet)"
+      [attr.aria-label]="'Navigate to ' + planet.name"
+      [title]="planet.name"
+    >
+      <span class="planet-dot" [style.width.px]="planet.size" [style.height.px]="planet.size">
+        <span class="planet-emoji">{{ planet.emoji }}</span>
+      </span>
+      <span class="planet-label">{{ planet.name }}</span>
+      <!-- Orbit ring on active -->
+      <span class="orbit-ring" *ngIf="i === activeIndex"></span>
+    </button>
+  </div>
+</nav>

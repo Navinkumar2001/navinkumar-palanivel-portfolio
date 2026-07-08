@@ -1,6 +1,8 @@
-import { Component, AfterViewInit } from '@angular/core';
+import { Component, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import emailjs from '@emailjs/browser';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-contact',
@@ -61,16 +63,22 @@ import { FormsModule } from '@angular/forms';
             </div>
           </div>
 
-          <form class="contact-form glass" (ngSubmit)="onSubmit()" #contactForm="ngForm">
+          <form class="contact-form glass" #formRef (ngSubmit)="onSubmit()" #contactForm="ngForm">
             <!-- Cyber Corners -->
             <div class="cyber-corner top-left"></div>
             <div class="cyber-corner top-right"></div>
             <div class="cyber-corner bottom-left"></div>
             <div class="cyber-corner bottom-right"></div>
 
+            <!-- Status message -->
+            <div class="form-status" *ngIf="statusMessage" [class.success]="!sendError" [class.error]="sendError">
+              <span class="status-icon">{{ sendError ? '✕' : '✓' }}</span>
+              {{ statusMessage }}
+            </div>
+
             <div class="form-group" [class.focused]="nameFocused" [class.filled]="name.length > 0">
               <span class="terminal-prompt">></span>
-              <input type="text" id="name" [(ngModel)]="name" name="name" required
+              <input type="text" id="name" [(ngModel)]="name" name="from_name" required
                      (focus)="nameFocused = true" (blur)="nameFocused = false">
               <label for="name">Your Name</label>
               <div class="form-line"></div>
@@ -78,7 +86,7 @@ import { FormsModule } from '@angular/forms';
 
             <div class="form-group" [class.focused]="emailFocused" [class.filled]="email.length > 0">
               <span class="terminal-prompt">></span>
-              <input type="email" id="email" [(ngModel)]="email" name="email" required
+              <input type="email" id="email" [(ngModel)]="email" name="from_email" required
                      (focus)="emailFocused = true" (blur)="emailFocused = false">
               <label for="email">Your Email</label>
               <div class="form-line"></div>
@@ -92,8 +100,12 @@ import { FormsModule } from '@angular/forms';
               <div class="form-line"></div>
             </div>
 
-            <button type="submit" class="btn-primary magnetic-btn submit-btn" [disabled]="submitted">
-              <span>{{ submitted ? 'Message Sent! ✓' : 'Send Message' }}</span>
+            <button type="submit" class="btn-primary magnetic-btn submit-btn" [disabled]="sending || submitted">
+              <span *ngIf="!sending && !submitted">Send Message</span>
+              <span *ngIf="sending" class="sending-text">
+                <span class="spinner"></span> Sending...
+              </span>
+              <span *ngIf="submitted">Message Sent! ✓</span>
             </button>
           </form>
         </div>
@@ -365,9 +377,73 @@ import { FormsModule } from '@angular/forms';
         cursor: default;
       }
     }
+
+    /* Form status message */
+    .form-status {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: slideDown 0.3s ease;
+
+      &.success {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        color: #10b981;
+      }
+
+      &.error {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+      }
+    }
+
+    .status-icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Sending spinner */
+    .sending-text {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
   `],
 })
 export class ContactComponent implements AfterViewInit {
+  @ViewChild('formRef') formRef!: ElementRef<HTMLFormElement>;
+
   name = '';
   email = '';
   message = '';
@@ -375,6 +451,15 @@ export class ContactComponent implements AfterViewInit {
   emailFocused = false;
   messageFocused = false;
   submitted = false;
+  sending = false;
+  sendError = false;
+  statusMessage = '';
+
+  // EmailJS credentials from environment config
+  private readonly EMAILJS_SERVICE_ID = environment.emailJs.serviceId;
+  private readonly EMAILJS_TEMPLATE_ID = environment.emailJs.templateId;
+  private readonly EMAILJS_AUTO_REPLY_TEMPLATE_ID = environment.emailJs.autoReplyTemplateId;
+  private readonly EMAILJS_PUBLIC_KEY = environment.emailJs.publicKey;
 
   contactInfo = [
     { icon: '📧', label: 'Email', value: 'navinkumar.it.2001@gmail.com', href: 'mailto:navinkumar.it.2001@gmail.com' },
@@ -384,7 +469,6 @@ export class ContactComponent implements AfterViewInit {
   ];
 
   ngAfterViewInit(): void {
-    // Ensure contact elements are visible
     document.querySelectorAll('.info-card').forEach((card) => {
       (card as HTMLElement).style.opacity = '1';
     });
@@ -393,14 +477,56 @@ export class ContactComponent implements AfterViewInit {
   }
 
   onSubmit(): void {
-    if (this.name && this.email && this.message) {
-      this.submitted = true;
-      setTimeout(() => {
-        this.submitted = false;
-        this.name = '';
-        this.email = '';
-        this.message = '';
-      }, 3000);
-    }
+    if (!this.name || !this.email || !this.message) return;
+
+    this.sending = true;
+    this.statusMessage = '';
+    this.sendError = false;
+
+    const formElement = this.formRef.nativeElement;
+
+    // Send notification email to you + auto-reply to sender
+    Promise.all([
+      emailjs.sendForm(
+        this.EMAILJS_SERVICE_ID,
+        this.EMAILJS_TEMPLATE_ID,
+        formElement,
+        this.EMAILJS_PUBLIC_KEY,
+      ),
+      emailjs.sendForm(
+        this.EMAILJS_SERVICE_ID,
+        this.EMAILJS_AUTO_REPLY_TEMPLATE_ID,
+        formElement,
+        this.EMAILJS_PUBLIC_KEY,
+      ),
+    ])
+      .then(
+        () => {
+          this.sending = false;
+          this.submitted = true;
+          this.statusMessage = 'Message sent successfully! Check your inbox for a confirmation.';
+          this.sendError = false;
+
+          setTimeout(() => {
+            this.submitted = false;
+            this.statusMessage = '';
+            this.name = '';
+            this.email = '';
+            this.message = '';
+          }, 5000);
+        },
+      )
+      .catch(
+        (error) => {
+          this.sending = false;
+          this.sendError = true;
+          this.statusMessage = 'Failed to send message. Please try again or email me directly.';
+          console.error('EmailJS Error:', error);
+
+          setTimeout(() => {
+            this.statusMessage = '';
+          }, 5000);
+        },
+      );
   }
 }

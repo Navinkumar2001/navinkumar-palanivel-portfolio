@@ -15,6 +15,10 @@ import { FooterComponent } from './components/footer/footer.component';
 import { CursorComponent } from './components/cursor/cursor.component';
 import { ParticlesComponent } from './components/particles/particles.component';
 import { LoaderComponent } from './components/loader/loader.component';
+import { TerminalComponent } from './components/terminal/terminal.component';
+import { Workspace3dComponent } from './components/workspace3d/workspace3d.component';
+import { SolarNavComponent } from './components/solar-nav/solar-nav.component';
+import { RocketScrollComponent } from './components/rocket-scroll/rocket-scroll.component';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -36,6 +40,10 @@ gsap.registerPlugin(ScrollTrigger);
     CursorComponent,
     ParticlesComponent,
     LoaderComponent,
+    TerminalComponent,
+    Workspace3dComponent,
+    SolarNavComponent,
+    RocketScrollComponent,
   ],
   template: `
     <!-- Loading Screen -->
@@ -53,6 +61,8 @@ gsap.registerPlugin(ScrollTrigger);
 
     <app-cursor></app-cursor>
     <app-particles></app-particles>
+    <app-solar-nav></app-solar-nav>
+    <app-rocket-scroll></app-rocket-scroll>
     <app-navbar></app-navbar>
 
     <!-- Scroll progress bar -->
@@ -116,6 +126,9 @@ gsap.registerPlugin(ScrollTrigger);
         <h1 class="gradient-text-animated">Building the Future with Code 🚀</h1>
       </div>
     </div>
+
+    <!-- Terminal Easter Egg (Ctrl + ~) -->
+    <app-terminal></app-terminal>
   `,
   styles: [`
     :host {
