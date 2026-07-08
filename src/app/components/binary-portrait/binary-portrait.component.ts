@@ -429,15 +429,43 @@ import { CommonModule } from '@angular/common';
       }
 
       @media (max-width: 768px) {
+        .hologram-viewport {
+          width: 320px;
+          height: 320px;
+        }
         .hologram-container {
-          width: 300px;
-          height: 300px;
+          width: 100%;
+          height: 100%;
         }
         .holo-image-wrap {
           width: 200px;
           height: 200px;
         }
-        .float-data { display: none; }
+        .float-data {
+          padding: 4px 8px;
+          border-radius: 4px;
+        }
+        .float-data.top-left { top: 15px; left: 5px; }
+        .float-data.top-right { top: 15px; right: 5px; }
+        .float-data.bottom-left { bottom: 15px; left: 5px; }
+        .float-data.bottom-right { bottom: 15px; right: 5px; }
+        .data-label { font-size: 0.45rem; }
+        .data-value { font-size: 0.6rem; }
+      }
+
+      @media (max-width: 400px) {
+        .hologram-viewport {
+          width: 280px;
+          height: 280px;
+        }
+        .holo-image-wrap {
+          width: 170px;
+          height: 170px;
+        }
+        .float-data.top-left { top: 10px; left: 0; }
+        .float-data.top-right { top: 10px; right: 0; }
+        .float-data.bottom-left { bottom: 10px; left: 0; }
+        .float-data.bottom-right { bottom: 10px; right: 0; }
       }
     `,
   ],

@@ -1,10 +1,28 @@
 import { Component, AfterViewInit, ElementRef, ViewChild, OnDestroy, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { BinaryPortraitComponent } from '../binary-portrait/binary-portrait.component';
 
 gsap.registerPlugin(ScrollTrigger);
+
+interface TooltipData {
+  icon: string;
+  iconImg?: string;
+  title: string;
+  type: string;
+  description: string;
+  colorClass: string;
+  meta?: { text: string; color: string }[];
+  techIcons?: { name: string; icon: string }[];
+  footer?: string;
+}
+
+interface JsonLine {
+  safeCode: SafeHtml;
+  tooltip?: TooltipData | null;
+}
 
 @Component({
   selector: 'app-about',
@@ -44,35 +62,101 @@ gsap.registerPlugin(ScrollTrigger);
                 <span class="terminal-status">● connected</span>
               </div>
 
-              <div class="about-info">
-                <div class="info-item" *ngFor="let info of profileInfo; let i = index"
-                     [style.animation-delay]="(i * 100) + 'ms'">
-                  <div class="info-icon">{{ info.icon }}</div>
-                  <div class="info-content">
-                    <span class="info-label">{{ info.label }}</span>
-                    <span class="info-value">{{ info.value }}</span>
+              <!-- JSON formatted content -->
+              <div class="json-content">
+                <!-- Scanline overlay effect -->
+                <div class="json-scanline"></div>
+                <!-- Inner glow effect -->
+                <div class="json-inner-glow"></div>
+
+                <!-- Code area with hoverable lines -->
+                <div class="json-code-area">
+                  <div class="json-line-wrapper" *ngFor="let line of jsonLines; let i = index"
+                       [class.typed]="i < visibleLines">
+                    <span class="line-num">{{ i + 1 }}</span>
+                    <div class="json-line"
+                         [class.has-tooltip]="line.tooltip"
+                         [class.active-line]="activeTooltipIndex === i"
+                         [attr.tabindex]="line.tooltip ? 0 : null"
+                         [attr.role]="line.tooltip ? 'button' : null"
+                         [attr.aria-label]="line.tooltip ? 'Show info for ' + line.tooltip.title : null"
+                         (mouseenter)="showTooltip(i, $event)"
+                         (mouseleave)="hideTooltip()"
+                         (click)="toggleTooltip(i, $event)"
+                         (keydown.enter)="onKeyboardToggle(i, $event)"
+                         (keydown.space)="onKeyboardToggle(i, $event)"
+                         (keydown.escape)="closeTooltip($event)">
+                      <span [innerHTML]="line.safeCode"></span>
+                    </div>
                   </div>
-                  <div class="info-line"></div>
+                  <!-- Blinking cursor -->
+                  <div class="json-cursor"></div>
+                </div>
+
+                <!-- Minimap -->
+                <div class="json-minimap">
+                  <div class="minimap-line" *ngFor="let line of jsonLineNumbers"
+                       [style.width.%]="30 + (line * 3)"
+                       [style.background]="line % 3 === 0 ? 'rgba(0, 212, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)'">
+                  </div>
+                  <div class="minimap-viewport"></div>
                 </div>
               </div>
 
-              <div class="about-description-wrapper">
-                <div class="desc-line-accent"></div>
-                <p class="about-description">
-                  I'm a Full-Stack Developer with 3+ years of hands-on experience building 
-                  enterprise-grade FinTech and AI-powered insurance platforms at Intellect Design Arena Ltd. 
-                  I specialize in crafting scalable frontend architectures with Angular and Vue.js, 
-                  designing robust backend APIs with FastAPI and Python, and integrating AI/ML workflows 
-                  into real-world products. From migrating legacy systems to modern frameworks, to building 
-                  intelligent document processing platforms from scratch — I thrive on turning complex 
-                  business challenges into elegant, high-performance web applications that serve thousands 
-                  of users daily.
-                </p>
+              <!-- Hover Tooltip Card -->
+              <div class="hover-tooltip" 
+                   *ngIf="activeTooltip"
+                   [style.top.px]="tooltipTop"
+                   [style.left.px]="tooltipLeft"
+                   [class]="'hover-tooltip ' + activeTooltip.colorClass">
+                <div class="tooltip-header">
+                  <img *ngIf="activeTooltip.iconImg" [src]="activeTooltip.iconImg" alt="" class="tooltip-icon-img" />
+                  <span *ngIf="!activeTooltip.iconImg" class="tooltip-icon">{{ activeTooltip.icon }}</span>
+                  <span class="tooltip-title">{{ activeTooltip.title }}</span>
+                  <span class="tooltip-type">{{ activeTooltip.type }}</span>
+                  <button class="tooltip-close" (click)="closeTooltip($event)" aria-label="Close tooltip">✕</button>
+                </div>
+                <div class="tooltip-divider"></div>
+                <div class="tooltip-body">
+                  <p class="tooltip-desc">{{ activeTooltip.description }}</p>
+                  <!-- Tech icons grid -->
+                  <div class="tooltip-tech-icons" *ngIf="activeTooltip.techIcons">
+                    <div class="tech-icon-item" *ngFor="let tech of activeTooltip.techIcons">
+                      <img [src]="tech.icon" [alt]="tech.name" class="tech-icon-img" />
+                      <span class="tech-icon-name">{{ tech.name }}</span>
+                    </div>
+                  </div>
+                  <!-- Regular meta items -->
+                  <div class="tooltip-meta" *ngIf="activeTooltip.meta && !activeTooltip.techIcons">
+                    <span class="meta-item" *ngFor="let m of activeTooltip.meta">
+                      <span class="meta-dot" [style.background]="m.color"></span>
+                      {{ m.text }}
+                    </span>
+                  </div>
+                </div>
+                <div class="tooltip-footer" *ngIf="activeTooltip.footer">
+                  {{ activeTooltip.footer }}
+                </div>
               </div>
 
-              <!-- Tech badges at bottom -->
-              <div class="tech-badges">
-                <span class="badge" *ngFor="let badge of techBadges">{{ badge }}</span>
+              <!-- Bottom toolbar -->
+              <div class="json-toolbar">
+                <div class="toolbar-left">
+                  <span class="toolbar-item">
+                    <span class="toolbar-icon">⎇</span> main
+                  </span>
+                  <span class="toolbar-item">
+                    <span class="toolbar-icon">◉</span> 0 errors
+                  </span>
+                  <span class="toolbar-item">
+                    <span class="toolbar-icon">⚠</span> 0 warnings
+                  </span>
+                </div>
+                <div class="toolbar-right">
+                  <span class="toolbar-item">JSON</span>
+                  <span class="toolbar-item">UTF-8</span>
+                  <span class="toolbar-item">Ln {{ activeLine }}, Col 1</span>
+                </div>
               </div>
             </div>
           </div>
@@ -217,7 +301,7 @@ gsap.registerPlugin(ScrollTrigger);
     .about-card {
       padding: 0;
       border-radius: 18px;
-      overflow: hidden;
+      overflow: visible;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
       position: relative;
 
@@ -237,6 +321,7 @@ gsap.registerPlugin(ScrollTrigger);
       background: rgba(0, 0, 0, 0.4);
       border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       gap: 12px;
+      border-radius: 18px 18px 0 0;
     }
 
     .terminal-dots {
@@ -274,174 +359,495 @@ gsap.registerPlugin(ScrollTrigger);
       50% { opacity: 0.5; }
     }
 
-    /* Info grid */
-    .about-info {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0;
-      padding: 24px 32px;
+    /* JSON content - IDE style */
+    .json-content {
+      position: relative;
+      display: flex;
+      padding: 0;
+      overflow: hidden;
+      background: rgba(10, 10, 20, 0.6);
+      min-height: 320px;
     }
 
-    .info-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 16px 12px;
+    /* Scanline overlay */
+    .json-scanline {
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 212, 255, 0.008) 2px,
+        rgba(0, 212, 255, 0.008) 4px
+      );
+      pointer-events: none;
+      z-index: 3;
+      animation: scanlineMove 8s linear infinite;
+    }
+
+    @keyframes scanlineMove {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 100px; }
+    }
+
+    /* Inner glow */
+    .json-inner-glow {
+      position: absolute;
+      inset: 0;
+      background: 
+        radial-gradient(ellipse at 20% 50%, rgba(0, 212, 255, 0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(168, 85, 247, 0.03) 0%, transparent 40%);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* Code area */
+    .json-code-area {
+      flex: 1;
+      padding: 20px 20px 20px 16px;
       position: relative;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-      animation: fadeSlideIn 0.5s ease forwards;
-      opacity: 0;
-      transform: translateX(-10px);
-      transition: background 0.3s ease;
+      z-index: 1;
+      overflow-x: auto;
+    }
+
+    .json-line-wrapper {
+      display: flex;
+      align-items: flex-start;
+      gap: 0;
+
+      .line-num {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.72rem;
+        line-height: 1.8;
+        color: rgba(255, 255, 255, 0.2);
+        text-align: right;
+        min-width: 28px;
+        padding-right: 12px;
+        user-select: none;
+        flex-shrink: 0;
+        border-right: 1px solid rgba(0, 212, 255, 0.1);
+        margin-right: 12px;
+      }
+    }
+
+    .json-line {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      line-height: 1.8;
+      color: rgba(255, 255, 255, 0.7);
+      padding: 1px 8px;
+      border-radius: 4px;
+      position: relative;
+      transition: background 0.25s ease, box-shadow 0.25s ease;
+      white-space: pre-wrap;
+      word-break: break-word;
+      flex: 1;
 
       &:hover {
-        background: rgba(0, 212, 255, 0.03);
+        background: rgba(100, 255, 218, 0.04);
+        box-shadow: inset 0 0 30px rgba(0, 212, 255, 0.02);
 
-        .info-icon {
-          transform: scale(1.15);
-          box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-        }
-
-        .info-line {
-          transform: scaleX(1);
+        &::before {
+          content: '';
+          position: absolute;
+          left: -16px;
+          top: 0;
+          bottom: 0;
+          width: 2px;
+          background: linear-gradient(180deg, #64ffda, #b388ff);
+          border-radius: 1px;
+          box-shadow: 0 0 8px rgba(100, 255, 218, 0.6);
         }
       }
     }
 
-    @keyframes fadeSlideIn {
-      to {
+    /* Blinking cursor */
+    .json-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 14px;
+      background: #00d4ff;
+      margin-left: 8px;
+      animation: blink 1s step-end infinite;
+      box-shadow: 0 0 6px rgba(0, 212, 255, 0.6);
+      vertical-align: middle;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    /* Minimap */
+    .json-minimap {
+      width: 40px;
+      padding: 20px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      background: rgba(0, 0, 0, 0.2);
+      position: relative;
+      z-index: 1;
+      border-left: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .minimap-line {
+      height: 3px;
+      border-radius: 1px;
+      opacity: 0.6;
+    }
+
+    .minimap-viewport {
+      position: absolute;
+      top: 16px;
+      left: 4px;
+      right: 4px;
+      height: 50%;
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 2px;
+      background: rgba(0, 212, 255, 0.03);
+    }
+
+    /* Bottom toolbar */
+    .json-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 16px;
+      background: rgba(0, 0, 0, 0.5);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.62rem;
+      border-radius: 0 0 18px 18px;
+    }
+
+    .toolbar-left, .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .toolbar-item {
+      color: rgba(255, 255, 255, 0.4);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: rgba(255, 255, 255, 0.7);
+      }
+    }
+
+    .toolbar-icon {
+      color: #00d4ff;
+      font-size: 0.7rem;
+    }
+
+    /* Syntax colors - handled via inline styles for Angular innerHTML compatibility */
+
+    /* Typing animation */
+    .json-line-wrapper {
+      opacity: 0;
+      transform: translateX(-4px);
+      transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+      &.typed {
         opacity: 1;
         transform: translateX(0);
       }
     }
 
-    .info-icon {
-      width: 36px;
-      height: 36px;
+    /* Close button on tooltip */
+    .tooltip-close {
+      width: 22px;
+      height: 22px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 8px;
-      background: rgba(0, 212, 255, 0.08);
-      border: 1px solid rgba(0, 212, 255, 0.15);
-      font-size: 1rem;
+      border: none;
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.4);
+      border-radius: 4px;
+      font-size: 0.7rem;
+      cursor: pointer;
       flex-shrink: 0;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.12);
+        color: #fff;
+      }
     }
 
-    .info-content {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
+    /* Focus styles for keyboard accessibility */
+    .json-line.has-tooltip:focus {
+      outline: none;
+      background: rgba(100, 255, 218, 0.06);
+      box-shadow: 0 0 0 1px rgba(0, 212, 255, 0.3);
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: -16px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(180deg, #64ffda, #b388ff);
+        border-radius: 1px;
+        box-shadow: 0 0 8px rgba(100, 255, 218, 0.6);
+      }
     }
 
-    .info-label {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      letter-spacing: 1.2px;
-      color: rgba(255, 255, 255, 0.35);
-    }
-
-    .info-value {
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #fff;
-    }
-
-    .info-line {
-      position: absolute;
-      bottom: 0;
-      left: 12px;
-      right: 12px;
-      height: 1px;
-      background: linear-gradient(90deg, #00d4ff, #a855f7);
-      transform: scaleX(0);
-      transform-origin: left;
-      transition: transform 0.4s ease;
-    }
-
-    /* Description */
-    .about-description-wrapper {
-      padding: 24px 32px;
-      position: relative;
-      display: flex;
-      gap: 16px;
-    }
-
-    .desc-line-accent {
-      width: 3px;
-      min-height: 100%;
-      background: linear-gradient(180deg, #00d4ff, #a855f7, transparent);
-      border-radius: 2px;
-      flex-shrink: 0;
-      position: relative;
+    /* Hoverable line indicator */
+    .json-line.has-tooltip {
+      cursor: pointer;
 
       &::after {
         content: '';
         position: absolute;
-        inset: 0;
-        background: inherit;
-        filter: blur(6px);
-        opacity: 0.5;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(0, 212, 255, 0.3);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      &:hover::after {
+        opacity: 1;
+        animation: dotPulse 1.5s ease infinite;
       }
     }
 
-    .about-description {
-      font-size: 0.95rem;
-      line-height: 1.85;
-      color: rgba(255, 255, 255, 0.65);
-    }
+    .json-line.active-line {
+      background: rgba(100, 255, 218, 0.06);
 
-    /* Tech badges */
-    .tech-badges {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding: 16px 32px 24px;
-      border-top: 1px solid rgba(255, 255, 255, 0.04);
-      position: relative;
-      z-index: 2;
-    }
-
-    .badge {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem;
-      padding: 4px 10px;
-      border-radius: 4px;
-      background: rgba(0, 212, 255, 0.06);
-      border: 1px solid rgba(0, 212, 255, 0.15);
-      color: #00d4ff;
-      transition: all 0.3s ease;
-      animation: badgePopIn 0.4s ease forwards;
-      opacity: 0;
-
-      &:nth-child(1) { animation-delay: 0.1s; }
-      &:nth-child(2) { animation-delay: 0.15s; }
-      &:nth-child(3) { animation-delay: 0.2s; }
-      &:nth-child(4) { animation-delay: 0.25s; }
-      &:nth-child(5) { animation-delay: 0.3s; }
-      &:nth-child(6) { animation-delay: 0.35s; }
-      &:nth-child(7) { animation-delay: 0.4s; }
-      &:nth-child(8) { animation-delay: 0.45s; }
-
-      &:hover {
-        background: rgba(0, 212, 255, 0.12);
-        border-color: rgba(0, 212, 255, 0.4);
-        box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
-        transform: translateY(-1px);
+      &::before {
+        content: '';
+        position: absolute;
+        left: -16px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(180deg, #64ffda, #b388ff);
+        border-radius: 1px;
+        box-shadow: 0 0 8px rgba(100, 255, 218, 0.6);
       }
     }
 
-    @keyframes badgePopIn {
+    @keyframes dotPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.4); }
+      50% { box-shadow: 0 0 0 4px rgba(0, 212, 255, 0); }
+    }
+
+    /* Hover Tooltip Card */
+    .hover-tooltip {
+      position: absolute;
+      z-index: 100;
+      min-width: 280px;
+      max-width: 360px;
+      border-radius: 12px;
+      background: rgba(12, 12, 24, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.6),
+        0 0 40px rgba(0, 212, 255, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      animation: tooltipIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      overflow: hidden;
+
+      /* Color variants */
+      &.color-cyan {
+        border-color: rgba(0, 212, 255, 0.2);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 212, 255, 0.1);
+        .tooltip-header { border-left: 3px solid #00d4ff; }
+        .tooltip-icon { background: rgba(0, 212, 255, 0.1); color: #00d4ff; }
+      }
+
+      &.color-purple {
+        border-color: rgba(168, 85, 247, 0.2);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(168, 85, 247, 0.1);
+        .tooltip-header { border-left: 3px solid #a855f7; }
+        .tooltip-icon { background: rgba(168, 85, 247, 0.1); color: #a855f7; }
+      }
+
+      &.color-green {
+        border-color: rgba(40, 200, 64, 0.2);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(40, 200, 64, 0.1);
+        .tooltip-header { border-left: 3px solid #28c840; }
+        .tooltip-icon { background: rgba(40, 200, 64, 0.1); color: #28c840; }
+      }
+
+      &.color-pink {
+        border-color: rgba(236, 72, 153, 0.2);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(236, 72, 153, 0.1);
+        .tooltip-header { border-left: 3px solid #ec4899; }
+        .tooltip-icon { background: rgba(236, 72, 153, 0.1); color: #ec4899; }
+      }
+
+      &.color-yellow {
+        border-color: rgba(255, 213, 79, 0.2);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 213, 79, 0.1);
+        .tooltip-header { border-left: 3px solid #ffd54f; }
+        .tooltip-icon { background: rgba(255, 213, 79, 0.1); color: #ffd54f; }
+      }
+    }
+
+    @keyframes tooltipIn {
       from {
         opacity: 0;
-        transform: scale(0.8);
+        transform: translateY(6px) scale(0.96);
       }
       to {
         opacity: 1;
-        transform: scale(1);
+        transform: translateY(0) scale(1);
       }
+    }
+
+    .tooltip-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-left: 3px solid #00d4ff;
+    }
+
+    .tooltip-icon {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .tooltip-icon-img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      border: 2px solid rgba(0, 212, 255, 0.3);
+      box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
+    }
+
+    .tooltip-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #fff;
+      flex: 1;
+    }
+
+    .tooltip-type {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.06);
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .tooltip-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+    }
+
+    .tooltip-body {
+      padding: 12px 16px;
+    }
+
+    .tooltip-desc {
+      font-size: 0.78rem;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.6);
+      margin: 0 0 10px;
+    }
+
+    .tooltip-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      color: rgba(255, 255, 255, 0.5);
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .meta-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Tech icons grid */
+    .tooltip-tech-icons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      padding: 4px 0;
+    }
+
+    .tech-icon-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 6px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      transition: all 0.25s ease;
+
+      &:hover {
+        background: rgba(255, 215, 64, 0.06);
+        border-color: rgba(255, 215, 64, 0.2);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+    }
+
+    .tech-icon-img {
+      width: 28px;
+      height: 28px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.15));
+    }
+
+    .tech-icon-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.55rem;
+      color: rgba(255, 255, 255, 0.6);
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .tooltip-footer {
+      padding: 8px 16px;
+      background: rgba(0, 0, 0, 0.2);
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      color: rgba(255, 255, 255, 0.3);
     }
 
     /* Stats grid */
@@ -525,11 +931,18 @@ gsap.registerPlugin(ScrollTrigger);
 
     @media (max-width: 768px) {
       .about-card { padding: 0; }
-      .about-info { grid-template-columns: 1fr; padding: 16px 20px; }
-      .about-description-wrapper { padding: 16px 20px; }
-      .tech-badges { padding: 12px 20px 20px; }
+      .json-content { min-height: 260px; }
+      .json-code-area { padding: 16px 12px 16px 10px; }
+      .json-line { font-size: 0.65rem; }
+      .json-line-wrapper .line-num { font-size: 0.6rem; min-width: 22px; padding-right: 8px; margin-right: 8px; }
+      .json-minimap { display: none; }
+      .json-toolbar { padding: 4px 10px; font-size: 0.55rem; }
       .stats-grid { grid-template-columns: 1fr 1fr; }
       .about-content { grid-template-columns: 1fr; gap: 40px; }
+      .hover-tooltip {
+        min-width: 240px;
+        max-width: calc(100vw - 48px);
+      }
     }
   `],
 })
@@ -549,6 +962,158 @@ export class AboutComponent implements AfterViewInit, OnDestroy {
 
   techBadges = ['Angular', 'Vue.js', 'JavaScript', 'TypeScript', 'Python', 'FastAPI', 'SQL', 'PostgreSQL', 'MongoDB'];
 
+  jsonLineNumbers = Array.from({ length: 22 }, (_, i) => i + 1);
+
+  activeLine = 22;
+
+  activeTooltip: TooltipData | null = null;
+
+  tooltipTop = 0;
+  tooltipLeft = 0;
+
+  visibleLines = 0;
+
+  jsonLines: JsonLine[] = [];
+
+  private rawJsonLines: { code: string; tooltip?: TooltipData | null }[] = [
+    { code: '<span style="color:#e0e0e0;font-weight:700;text-shadow:0 0 8px rgba(255,255,255,0.3);font-size:1.1em">{</span>', tooltip: null },
+    {
+      code: '  <span style="color:#80d8ff;text-shadow:0 0 12px rgba(128,216,255,0.4);font-weight:500">"name"</span><span style="color:rgba(255,255,255,0.3)">:</span> <span style="color:#80d8ff;text-shadow:0 0 10px rgba(128,216,255,0.35);font-weight:500">"Navinkumar Palanivel"</span><span style="color:rgba(255,255,255,0.3)">,</span>',
+      tooltip: {
+        icon: '👤', iconImg: 'assets/images/navinkumar-profile-pic.png', title: 'Navinkumar Palanivel', type: 'string',
+        description: 'Full-Stack Developer passionate about building scalable, high-performance web applications.',
+        colorClass: 'color-cyan',
+        meta: [{ text: 'Available for hire', color: '#28c840' }, { text: 'Remote friendly', color: '#00d4ff' }],
+        footer: '📧 Connect on LinkedIn',
+      },
+    },
+    {
+      code: '  <span style="color:#69f0ae;text-shadow:0 0 12px rgba(105,240,174,0.4);font-weight:500">"location"</span><span style="color:rgba(255,255,255,0.3)">:</span> <span style="color:#69f0ae;text-shadow:0 0 10px rgba(105,240,174,0.35)">"Chennai, India"</span><span style="color:rgba(255,255,255,0.3)">,</span>',
+      tooltip: {
+        icon: '📍', title: 'Chennai, India', type: 'string',
+        description: 'Based in Chennai, India\'s tech hub. Open to remote and hybrid opportunities worldwide.',
+        colorClass: 'color-green',
+        meta: [{ text: 'IST (UTC+5:30)', color: '#ffd54f' }, { text: 'Hybrid/Remote', color: '#28c840' }],
+        footer: '🌏 GMT+5:30 timezone',
+      },
+    },
+    {
+      code: '  <span style="color:#ea80fc;text-shadow:0 0 12px rgba(234,128,252,0.4);font-weight:500">"experience"</span><span style="color:rgba(255,255,255,0.3)">:</span> <span style="color:#ea80fc;text-shadow:0 0 10px rgba(234,128,252,0.35)">"3+ Years"</span><span style="color:rgba(255,255,255,0.3)">,</span>',
+      tooltip: {
+        icon: '⏱️', title: '3+ Years Experience', type: 'string',
+        description: 'Over 3 years of professional experience delivering enterprise-grade software across FinTech and InsurTech domains.',
+        colorClass: 'color-purple',
+        meta: [{ text: 'FinTech', color: '#a855f7' }, { text: 'InsurTech', color: '#ec4899' }, { text: 'AI/ML', color: '#00d4ff' }],
+        footer: '🚀 Shipped 50+ features to production',
+      },
+    },
+    {
+      code: '  <span style="color:#ffd740;text-shadow:0 0 12px rgba(255,215,64,0.4);font-weight:500">"company"</span><span style="color:rgba(255,255,255,0.3)">:</span> <span style="color:#ffd740;text-shadow:0 0 10px rgba(255,215,64,0.35)">"Intellect Design Arena Ltd"</span><span style="color:rgba(255,255,255,0.3)">,</span>',
+      tooltip: {
+        icon: '🏢', title: 'Intellect Design Arena Ltd', type: 'string',
+        description: 'A global leader in financial technology for banking, insurance, and capital markets with operations in 57+ countries.',
+        colorClass: 'color-yellow',
+        meta: [{ text: '57+ countries', color: '#ffd54f' }, { text: 'Fortune 500 clients', color: '#f48fb1' }],
+        footer: '🌐 Global FinTech company',
+      },
+    },
+    {
+      code: '  <span style="color:#ff80ab;text-shadow:0 0 12px rgba(255,128,171,0.4);font-weight:500">"role"</span><span style="color:rgba(255,255,255,0.3)">:</span> <span style="color:#ff80ab;text-shadow:0 0 10px rgba(255,128,171,0.35)">"Full-Stack Developer"</span><span style="color:rgba(255,255,255,0.3)">,</span>',
+      tooltip: {
+        icon: '💻', title: 'Full-Stack Developer', type: 'string',
+        description: 'End-to-end development from pixel-perfect frontends to scalable backend architectures and CI/CD pipelines.',
+        colorClass: 'color-pink',
+        meta: [{ text: 'Frontend', color: '#00d4ff' }, { text: 'Backend', color: '#a855f7' }, { text: 'DevOps', color: '#28c840' }],
+        footer: '⚡ Angular • Vue.js • FastAPI • Python',
+      },
+    },
+    {
+      code: '  <span style="color:#80d8ff;text-shadow:0 0 12px rgba(128,216,255,0.4);font-weight:500">"summary"</span><span style="color:rgba(255,255,255,0.3)">:</span> <span style="color:#ffd180;text-shadow:0 0 6px rgba(255,209,128,0.2)">"Building enterprise-grade FinTech &amp; AI-powered platforms."</span><span style="color:rgba(255,255,255,0.3)">,</span>',
+      tooltip: {
+        icon: '📝', title: 'About Me', type: 'string',
+        description: 'I specialize in crafting scalable frontend architectures, designing robust backend APIs, and integrating AI/ML workflows into real-world products.',
+        colorClass: 'color-cyan',
+        meta: [{ text: 'Architecture', color: '#00d4ff' }, { text: 'AI/ML Integration', color: '#a855f7' }],
+        footer: '🎯 Turning complex challenges into elegant solutions',
+      },
+    },
+    { code: '  <span style="color:#b9f6ca;text-shadow:0 0 12px rgba(185,246,202,0.4);font-weight:500">"expertise"</span><span style="color:rgba(255,255,255,0.3)">:</span> <span style="color:#b388ff;font-weight:600;text-shadow:0 0 10px rgba(179,136,255,0.4)">[</span>', tooltip: null },
+    {
+      code: '    <span style="color:#a5d6a7;text-shadow:0 0 6px rgba(165,214,167,0.25)">"Enterprise FinTech Platforms"</span><span style="color:rgba(255,255,255,0.3)">,</span>',
+      tooltip: {
+        icon: '🏦', title: 'Enterprise FinTech Platforms', type: 'string',
+        description: 'Built and maintained large-scale banking and payment platforms handling millions in transactions daily.',
+        colorClass: 'color-green',
+        meta: [{ text: 'Banking', color: '#69f0ae' }, { text: 'Payments', color: '#00d4ff' }, { text: 'High Volume', color: '#ffd54f' }],
+        footer: '💰 Mission-critical financial systems',
+      },
+    },
+    {
+      code: '    <span style="color:#a5d6a7;text-shadow:0 0 6px rgba(165,214,167,0.25)">"AI-powered Insurance Systems"</span><span style="color:rgba(255,255,255,0.3)">,</span>',
+      tooltip: {
+        icon: '🤖', title: 'AI-powered Insurance Systems', type: 'string',
+        description: 'Integrated AI/ML models into insurance platforms for automated document processing and risk assessment.',
+        colorClass: 'color-purple',
+        meta: [{ text: 'ML Models', color: '#a855f7' }, { text: 'Document AI', color: '#ec4899' }, { text: 'Automation', color: '#00d4ff' }],
+        footer: '🧠 Intelligent automation pipelines',
+      },
+    },
+    {
+      code: '    <span style="color:#a5d6a7;text-shadow:0 0 6px rgba(165,214,167,0.25)">"Legacy System Migration"</span><span style="color:rgba(255,255,255,0.3)">,</span>',
+      tooltip: {
+        icon: '🔄', title: 'Legacy System Migration', type: 'string',
+        description: 'Successfully migrated legacy applications to modern Angular/Vue.js frameworks with zero downtime.',
+        colorClass: 'color-cyan',
+        meta: [{ text: 'Zero downtime', color: '#28c840' }, { text: 'Incremental', color: '#00d4ff' }],
+        footer: '🚀 Seamless modernization',
+      },
+    },
+    {
+      code: '    <span style="color:#a5d6a7;text-shadow:0 0 6px rgba(165,214,167,0.25)">"Intelligent Document Processing"</span>',
+      tooltip: {
+        icon: '📄', title: 'Intelligent Document Processing', type: 'string',
+        description: 'Built end-to-end IDP platforms using OCR, NLP, and custom ML models for extracting structured data from unstructured documents.',
+        colorClass: 'color-yellow',
+        meta: [{ text: 'OCR', color: '#ffd54f' }, { text: 'NLP', color: '#a855f7' }, { text: 'ML Pipeline', color: '#ec4899' }],
+        footer: '📊 90%+ extraction accuracy',
+      },
+    },
+    { code: '  <span style="color:#b388ff;font-weight:600;text-shadow:0 0 10px rgba(179,136,255,0.4)">]</span><span style="color:rgba(255,255,255,0.3)">,</span>', tooltip: null },
+    {
+      code: '  <span style="color:#ffd740;text-shadow:0 0 12px rgba(255,215,64,0.4);font-weight:500">"techStack"</span><span style="color:rgba(255,255,255,0.3)">:</span> <span style="color:#b388ff;font-weight:600;text-shadow:0 0 10px rgba(179,136,255,0.4)">[</span>',
+      tooltip: {
+        icon: '🛠️', title: 'Tech Stack', type: 'array',
+        description: 'Modern technology stack spanning frontend frameworks, backend services, databases, and cloud infrastructure.',
+        colorClass: 'color-yellow',
+        techIcons: [
+          { name: 'Angular', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/angular/angular-original.svg' },
+          { name: 'Vue.js', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vuejs/vuejs-original.svg' },
+          { name: 'TypeScript', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg' },
+          { name: 'JavaScript', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg' },
+          { name: 'Python', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg' },
+          { name: 'FastAPI', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/fastapi/fastapi-original.svg' },
+          { name: 'PostgreSQL', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg' },
+          { name: 'MongoDB', icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mongodb/mongodb-original.svg' },
+        ],
+        footer: '📦 8 production technologies',
+      },
+    },
+    { code: '    <span style="color:#81d4fa;text-shadow:0 0 8px rgba(129,212,250,0.3)">"Angular"</span><span style="color:rgba(255,255,255,0.3)">,</span> <span style="color:#81d4fa;text-shadow:0 0 8px rgba(129,212,250,0.3)">"Vue.js"</span><span style="color:rgba(255,255,255,0.3)">,</span> <span style="color:#81d4fa;text-shadow:0 0 8px rgba(129,212,250,0.3)">"TypeScript"</span><span style="color:rgba(255,255,255,0.3)">,</span>', tooltip: null },
+    { code: '    <span style="color:#81d4fa;text-shadow:0 0 8px rgba(129,212,250,0.3)">"Python"</span><span style="color:rgba(255,255,255,0.3)">,</span> <span style="color:#81d4fa;text-shadow:0 0 8px rgba(129,212,250,0.3)">"FastAPI"</span><span style="color:rgba(255,255,255,0.3)">,</span> <span style="color:#81d4fa;text-shadow:0 0 8px rgba(129,212,250,0.3)">"PostgreSQL"</span>', tooltip: null },
+    { code: '  <span style="color:#b388ff;font-weight:600;text-shadow:0 0 10px rgba(179,136,255,0.4)">]</span><span style="color:rgba(255,255,255,0.3)">,</span>', tooltip: null },
+    {
+      code: '  <span style="color:#ff80ab;text-shadow:0 0 12px rgba(255,128,171,0.4);font-weight:500">"dailyUsers"</span><span style="color:rgba(255,255,255,0.3)">:</span> <span style="color:#ff80ab;font-weight:700;font-size:1.05em;text-shadow:0 0 14px rgba(255,128,171,0.5)">1000</span><span style="color:#ff80ab;font-weight:700;text-shadow:0 0 14px rgba(255,128,171,0.5)">+</span>',
+      tooltip: {
+        icon: '👥', title: '1000+ Daily Users', type: 'number',
+        description: 'Applications I\'ve built serve thousands of active users daily across enterprise banking and insurance platforms.',
+        colorClass: 'color-pink',
+        meta: [{ text: '1K+ daily', color: '#ec4899' }, { text: '100K+ records', color: '#a855f7' }],
+        footer: '📊 High-traffic enterprise platforms',
+      },
+    },
+    { code: '<span style="color:#e0e0e0;font-weight:700;text-shadow:0 0 8px rgba(255,255,255,0.3);font-size:1.1em">}</span>', tooltip: null },
+  ];
+
   stats = [
     { value: 3, suffix: '+', label: 'Years Experience', icon: '🚀' },
     { value: 10, suffix: '+', label: 'Enterprise Modules', icon: '📦' },
@@ -556,10 +1121,93 @@ export class AboutComponent implements AfterViewInit, OnDestroy {
     { value: 50, suffix: '+', label: 'Features Delivered', icon: '✨' },
   ];
 
-  constructor(private ngZone: NgZone) {}
+  activeTooltipIndex: number | null = null;
+
+  constructor(private ngZone: NgZone, private sanitizer: DomSanitizer) {
+    this.jsonLines = this.rawJsonLines.map(line => ({
+      safeCode: this.sanitizer.bypassSecurityTrustHtml(line.code),
+      tooltip: line.tooltip,
+    }));
+  }
+
+  closeTooltip(event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    this.activeTooltip = null;
+    this.activeTooltipIndex = null;
+  }
+
+  onKeyboardToggle(index: number, event: Event): void {
+    event.preventDefault();
+    this.toggleTooltip(index, event as KeyboardEvent as unknown as MouseEvent);
+  }
+
+  showTooltip(index: number, event: MouseEvent): void {
+    // Skip on touch devices — handled by toggleTooltip
+    if ('ontouchstart' in window) return;
+
+    const line = this.jsonLines[index];
+    if (!line.tooltip) {
+      this.activeTooltip = null;
+      this.activeTooltipIndex = null;
+      return;
+    }
+    this.activeTooltip = line.tooltip;
+    this.activeTooltipIndex = index;
+    this.activeLine = index + 1;
+    this.positionTooltip(event);
+  }
+
+  hideTooltip(): void {
+    // Skip on touch devices — handled by toggleTooltip
+    if ('ontouchstart' in window) return;
+    this.activeTooltip = null;
+    this.activeTooltipIndex = null;
+  }
+
+  toggleTooltip(index: number, event: MouseEvent | TouchEvent): void {
+    const line = this.jsonLines[index];
+    if (!line.tooltip) {
+      this.activeTooltip = null;
+      this.activeTooltipIndex = null;
+      return;
+    }
+
+    // If same line is tapped again, close it
+    if (this.activeTooltipIndex === index) {
+      this.activeTooltip = null;
+      this.activeTooltipIndex = null;
+      return;
+    }
+
+    this.activeTooltip = line.tooltip;
+    this.activeTooltipIndex = index;
+    this.activeLine = index + 1;
+    this.positionTooltip(event);
+  }
+
+  private positionTooltip(event: MouseEvent | TouchEvent): void {
+    const target = (event.currentTarget || event.target) as HTMLElement;
+    const card = target.closest('.about-card') as HTMLElement;
+    if (card) {
+      const cardRect = card.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const isMobile = window.innerWidth <= 768;
+
+      if (isMobile) {
+        // Center tooltip horizontally on mobile, show below the line
+        this.tooltipTop = targetRect.top - cardRect.top + targetRect.height + 8;
+        this.tooltipLeft = Math.max(8, (cardRect.width - 280) / 2);
+      } else {
+        this.tooltipTop = targetRect.top - cardRect.top + targetRect.height + 8;
+        this.tooltipLeft = Math.min(targetRect.left - cardRect.left + 40, cardRect.width - 320);
+      }
+    }
+  }
 
   ngAfterViewInit(): void {
     this.initAnimations();
+    this.startTypingAnimation();
     this.ngZone.runOutsideAngular(() => {
       this.initBgParticles();
       this.animateBgParticles();
@@ -568,6 +1216,37 @@ export class AboutComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy(): void {
     cancelAnimationFrame(this.animationId);
+  }
+
+  private startTypingAnimation(): void {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            this.typeLines();
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.2 },
+    );
+    const el = this.sectionRef?.nativeElement;
+    if (el) observer.observe(el);
+  }
+
+  private typeLines(): void {
+    const totalLines = this.jsonLines.length;
+    let current = 0;
+    const typeNextLine = (): void => {
+      current++;
+      this.visibleLines = current;
+      if (current < totalLines) {
+        // Vary delay based on line content length to simulate real typing speed
+        const delay = 150 + Math.random() * 100;
+        setTimeout(typeNextLine, delay);
+      }
+    };
+    setTimeout(typeNextLine, 400); // Initial delay before typing starts
   }
 
   private initBgParticles(): void {

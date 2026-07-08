@@ -1,0 +1,54 @@
+<div class="rocket-track" [class.visible]="isVisible">
+  <!-- Atmospheric layers background -->
+  <div class="atmosphere">
+    <div *ngFor="let layer of layers"
+         class="atmo-layer"
+         [style.top.%]="100 - layer.to"
+         [style.height.%]="layer.to - layer.from"
+         [style.background]="layer.color">
+    </div>
+  </div>
+
+  <!-- Stars (appear in upper atmosphere) -->
+  <div class="stars" [class.active]="showStars">
+    <span class="star" *ngFor="let s of [1,2,3,4,5,6,7,8]"
+          [style.top.%]="s * 8 + 5"
+          [style.left.%]="(s * 37) % 80 + 10">
+    </span>
+  </div>
+
+  <!-- Track line -->
+  <div class="track-line">
+    <div class="track-fill" [style.height.%]="scrollPercent"></div>
+  </div>
+
+  <!-- Rocket -->
+  <div class="rocket" [style.bottom.%]="rocketBottom">
+    <!-- Rocket body -->
+    <div class="rocket-body">
+      <div class="rocket-nose"></div>
+      <div class="rocket-fuselage"></div>
+      <div class="rocket-fin left-fin"></div>
+      <div class="rocket-fin right-fin"></div>
+      <div class="rocket-window"></div>
+    </div>
+
+    <!-- Flame -->
+    <div class="flame-container" [style.opacity]="flameIntensity">
+      <div class="flame flame-core"></div>
+      <div class="flame flame-mid"></div>
+      <div class="flame flame-outer"></div>
+      <div class="smoke-particle" *ngFor="let p of [1,2,3]"></div>
+    </div>
+  </div>
+
+  <!-- Layer label -->
+  <div class="layer-label">
+    <span class="layer-name">{{ currentLayer }}</span>
+  </div>
+
+  <!-- Altitude indicator -->
+  <div class="altitude">
+    <span class="alt-value">{{ scrollPercent | number:'1.0-0' }}%</span>
+  </div>
+</div>

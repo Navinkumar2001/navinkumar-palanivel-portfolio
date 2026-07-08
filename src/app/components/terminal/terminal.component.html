@@ -1,0 +1,44 @@
+<div class="terminal-overlay" *ngIf="isOpen" (click)="onOverlayClick($event)">
+  <div class="terminal-window" (click)="$event.stopPropagation()">
+    <!-- Terminal Title Bar -->
+    <div class="terminal-titlebar">
+      <div class="titlebar-dots">
+        <span class="dot close" (click)="close()"></span>
+        <span class="dot minimize"></span>
+        <span class="dot maximize"></span>
+      </div>
+      <span class="titlebar-text">navinkumar&#64;portfolio:~</span>
+      <span class="titlebar-hint">Ctrl + /</span>
+    </div>
+
+    <!-- Terminal Body -->
+    <div class="terminal-body" #terminalBody>
+      <!-- Welcome message -->
+      <div class="terminal-welcome" *ngIf="history.length === 0">
+        <pre class="ascii-art">{{ asciiArt }}</pre>
+        <p class="welcome-text">Welcome to Navinkumar's Terminal v1.0.0</p>
+        <p class="welcome-hint">Type <span class="cmd-highlight">help</span> to see available commands</p>
+      </div>
+
+      <!-- History -->
+      <div *ngFor="let line of history" [ngClass]="'line line-' + line.type">
+        <span *ngIf="line.type === 'input'" class="prompt">visitor&#64;portfolio:~$&nbsp;</span>
+        <span [innerHTML]="line.text"></span>
+      </div>
+
+      <!-- Current input -->
+      <div class="input-line">
+        <span class="prompt">visitor&#64;portfolio:~$&nbsp;</span>
+        <input
+          #inputEl
+          type="text"
+          [(ngModel)]="currentInput"
+          (keydown)="onKeyDown($event)"
+          class="terminal-input"
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </div>
+    </div>
+  </div>
+</div>
