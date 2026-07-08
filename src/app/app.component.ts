@@ -16,7 +16,6 @@ import { CursorComponent } from './components/cursor/cursor.component';
 import { ParticlesComponent } from './components/particles/particles.component';
 import { LoaderComponent } from './components/loader/loader.component';
 import { TerminalComponent } from './components/terminal/terminal.component';
-import { Workspace3dComponent } from './components/workspace3d/workspace3d.component';
 import { SolarNavComponent } from './components/solar-nav/solar-nav.component';
 import { RocketScrollComponent } from './components/rocket-scroll/rocket-scroll.component';
 
@@ -41,7 +40,6 @@ gsap.registerPlugin(ScrollTrigger);
     ParticlesComponent,
     LoaderComponent,
     TerminalComponent,
-    Workspace3dComponent,
     SolarNavComponent,
     RocketScrollComponent,
   ],
