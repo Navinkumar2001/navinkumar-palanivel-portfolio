@@ -456,12 +456,12 @@ export class TechStackComponent implements AfterViewInit, OnDestroy {
     { name: 'Git', category: 'Tools', color: '#f05032', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/git/git-original.svg' },
     { name: 'Jenkins', category: 'Tools', color: '#d24939', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/jenkins/jenkins-original.svg' },
     { name: 'Jira', category: 'Tools', color: '#0052cc', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/jira/jira-original.svg' },
-    { name: 'ag-Grid', category: 'Tools', color: '#00d4ff', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nodejs/nodejs-original.svg' },
+    { name: 'AG Grid', category: 'Tools', color: '#55b4c8', logo: 'assets/images/ag-grid-logo.svg' },
     { name: 'Webpack', category: 'Tools', color: '#8dd6f9', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/webpack/webpack-original.svg' },
     { name: 'Vite', category: 'Tools', color: '#646cff', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vitejs/vitejs-original.svg' },
-    { name: 'ChatGPT', category: 'AI Tools', color: '#10a37f', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/openai/openai-original.svg' },
-    { name: 'Claude', category: 'AI Tools', color: '#a855f7', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/anthropic/anthropic-original.svg' },
-    { name: 'Amazon Q', category: 'AI Tools', color: '#ff9900', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/amazonwebservices/amazonwebservices-original-wordmark.svg' },
+    { name: 'ChatGPT', category: 'AI Tools', color: '#10a37f', logo: 'assets/images/chatgpt-logo.svg' },
+    { name: 'Claude', category: 'AI Tools', color: '#d97757', logo: 'assets/images/claude-logo.svg' },
+    { name: 'Amazon Q', category: 'AI Tools', color: '#ff9900', logo: 'assets/images/amazon-q-logo.svg' },
     { name: 'Gemini', category: 'AI Tools', color: '#4285f4', logo: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/google/google-original.svg' },
   ];
 

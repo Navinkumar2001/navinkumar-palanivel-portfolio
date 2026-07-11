@@ -52,7 +52,7 @@ import * as THREE from 'three';
             <span class="stat-label">Years Exp</span>
           </div>
           <div class="stat-item">
-            <span class="stat-number">10+</span>
+            <span class="stat-number">20+</span>
             <span class="stat-label">Modules</span>
           </div>
           <div class="stat-item">

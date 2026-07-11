@@ -4,13 +4,16 @@ import {
   ElementRef,
   ViewChild,
   AfterViewChecked,
+  OnDestroy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 interface TerminalLine {
-  type: 'input' | 'output' | 'ascii' | 'error' | 'success';
+  type: 'input' | 'output' | 'ascii' | 'error' | 'success' | 'navin-effect';
   text: string;
+  safeHtml?: SafeHtml;
 }
 
 @Component({
@@ -20,7 +23,7 @@ interface TerminalLine {
   templateUrl: './terminal.component.html',
   styleUrl: './terminal.component.scss',
 })
-export class TerminalComponent implements AfterViewChecked {
+export class TerminalComponent implements AfterViewChecked, OnDestroy {
   @ViewChild('terminalBody') terminalBodyRef!: ElementRef<HTMLElement>;
   @ViewChild('inputEl') inputElRef!: ElementRef<HTMLInputElement>;
 
@@ -29,7 +32,11 @@ export class TerminalComponent implements AfterViewChecked {
   history: TerminalLine[] = [];
   commandHistory: string[] = [];
   historyIndex = -1;
+  navinEffectActive = false;
   private shouldScroll = false;
+  private activeInterval: ReturnType<typeof setInterval> | null = null;
+
+  constructor(private sanitizer: DomSanitizer) {}
 
   asciiArt = [
     ' _   _             _       _                                ',
@@ -52,6 +59,7 @@ export class TerminalComponent implements AfterViewChecked {
       '  <span style="color:#00d4ff">resume</span>        - Download my resume',
       '  <span style="color:#00d4ff">social</span>        - Social links',
       '  <span style="color:#00d4ff">sudo rm -rf doubts</span> - Easter egg',
+      '  <span style="color:#00d4ff">navin</span>         - ⚡ Secret effect',
       '  <span style="color:#00d4ff">clear</span>         - Clear terminal',
       '  <span style="color:#00d4ff">exit</span>          - Close terminal',
     ],
@@ -137,6 +145,10 @@ export class TerminalComponent implements AfterViewChecked {
       '',
       '  <span style="color:#ffd740">0 doubts remaining. Hire with confidence!</span>',
     ],
+    navin: () => {
+      this.triggerNavinEffect();
+      return [];
+    },
     clear: () => {
       this.history = [];
       return [];
@@ -165,6 +177,13 @@ export class TerminalComponent implements AfterViewChecked {
     }
     if (this.isOpen && this.inputElRef) {
       this.inputElRef.nativeElement.focus();
+    }
+  }
+
+  ngOnDestroy(): void {
+    if (this.activeInterval) {
+      clearInterval(this.activeInterval);
+      this.activeInterval = null;
     }
   }
 
@@ -251,5 +270,58 @@ export class TerminalComponent implements AfterViewChecked {
     if (el) {
       el.scrollTop = el.scrollHeight;
     }
+  }
+
+  private triggerNavinEffect(): void {
+    this.navinEffectActive = true;
+
+    const imgHtml = `<div style="display:flex;justify-content:center;width:100%;padding:16px 0"><img src="assets/images/navinkumar-profile-pic.png" alt="Navinkumar" style="width:140px;height:140px;border-radius:50%;border:2px solid #00d4ff;box-shadow:0 0 20px rgba(0,212,255,0.5),0 0 40px rgba(0,212,255,0.2);filter:saturate(0.3) brightness(1.1) sepia(1) hue-rotate(160deg) saturate(2);object-fit:cover;display:block" /></div>`;
+
+    const cardHtml = `<div style="display:flex;justify-content:center"><pre style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;line-height:1.5;color:#00d4ff;text-align:left;margin:0"><span style="color:#00d4ff">╔════════════════════════════════════════╗</span>
+<span style="color:#00d4ff">║</span>                                        <span style="color:#00d4ff">║</span>
+<span style="color:#00d4ff">║</span>          <span style="color:#66e5ff">NAVINKUMAR PALANIVEL</span>          <span style="color:#00d4ff">║</span>
+<span style="color:#00d4ff">║</span>          <span style="color:#0099cc">━━━━━━━━━━━━━━━━━━━━━</span>         <span style="color:#00d4ff">║</span>
+<span style="color:#00d4ff">║</span>                                        <span style="color:#00d4ff">║</span>
+<span style="color:#00d4ff">║</span>  Full-Stack Developer                  <span style="color:#00d4ff">║</span>
+<span style="color:#00d4ff">║</span>  Intellect Design Arena Ltd            <span style="color:#00d4ff">║</span>
+<span style="color:#00d4ff">║</span>  Chennai, India                        <span style="color:#00d4ff">║</span>
+<span style="color:#00d4ff">║</span>  3+ Years Experience                   <span style="color:#00d4ff">║</span>
+<span style="color:#00d4ff">║</span>                                        <span style="color:#00d4ff">║</span>
+<span style="color:#00d4ff">║</span>  <span style="color:#0099cc">STACK:</span> Angular, Vue, TypeScript       <span style="color:#00d4ff">║</span>
+<span style="color:#00d4ff">║</span>         Python, FastAPI, Docker        <span style="color:#00d4ff">║</span>
+<span style="color:#00d4ff">║</span>         AI/ML, MongoDB, PostgreSQL     <span style="color:#00d4ff">║</span>
+<span style="color:#00d4ff">║</span>                                        <span style="color:#00d4ff">║</span>
+<span style="color:#00d4ff">║</span>  <span style="color:#0099cc">FOCUS:</span> FinTech, AI, Scalability       <span style="color:#00d4ff">║</span>
+<span style="color:#00d4ff">║</span>                                        <span style="color:#00d4ff">║</span>
+<span style="color:#00d4ff">║</span>  <span style="color:#66e5ff">navinkumar.it.2001@gmail.com</span>          <span style="color:#00d4ff">║</span>
+<span style="color:#00d4ff">║</span>  <span style="color:#66e5ff">+91 7397063122</span>                        <span style="color:#00d4ff">║</span>
+<span style="color:#00d4ff">║</span>                                        <span style="color:#00d4ff">║</span>
+<span style="color:#00d4ff">╚════════════════════════════════════════╝</span></pre></div>`;
+
+    const taglineHtml = `<div style="text-align:center;padding:8px 0"><span style="color:#00d4ff;opacity:0.6;font-family:'JetBrains Mono',monospace;font-size:0.75rem">「 Building the future, one commit at a time 」</span></div>`;
+
+    const lines: TerminalLine[] = [
+      { type: 'navin-effect', text: '' },
+      { type: 'navin-effect', text: '<div style="text-align:center"><span style="color:#00d4ff">█▓▒░ LOADING PROFILE ░▒▓█</span></div>' },
+      { type: 'navin-effect', text: '', safeHtml: this.sanitizer.bypassSecurityTrustHtml(imgHtml) },
+      { type: 'navin-effect', text: '', safeHtml: this.sanitizer.bypassSecurityTrustHtml(cardHtml) },
+      { type: 'navin-effect', text: '', safeHtml: this.sanitizer.bypassSecurityTrustHtml(taglineHtml) },
+      { type: 'navin-effect', text: '' },
+    ];
+
+    let i = 0;
+    this.activeInterval = setInterval(() => {
+      if (i < lines.length) {
+        this.history.push(lines[i]);
+        this.shouldScroll = true;
+        i++;
+      } else {
+        clearInterval(this.activeInterval!);
+        this.activeInterval = null;
+        setTimeout(() => {
+          this.navinEffectActive = false;
+        }, 4000);
+      }
+    }, 300);
   }
 }

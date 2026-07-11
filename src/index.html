@@ -40,6 +40,16 @@
   <base href="/">
 </head>
 <body class="bg-dark-900 text-white overflow-x-hidden">
+  <script>
+    // Force scroll to top on every page load/refresh — runs before Angular bootstraps
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+    window.addEventListener('beforeunload', function() {
+      window.scrollTo(0, 0);
+    });
+  </script>
   <app-root></app-root>
 </body>
 </html>
