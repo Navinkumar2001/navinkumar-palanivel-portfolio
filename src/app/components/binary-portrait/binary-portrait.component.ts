@@ -355,7 +355,7 @@ import { CommonModule } from '@angular/common';
         border-radius: 50%;
         pointer-events: none;
         z-index: 8;
-        opacity: 0;
+        opacity: 0.85;
         transition: opacity 0.3s ease;
         transform: translateZ(30px);
       }
@@ -617,37 +617,66 @@ export class BinaryPortraitComponent implements AfterViewInit, OnDestroy {
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, rect.width, rect.height);
 
+    // Always render a subtle full-image binary rain in blue
+    const fontSize = 9;
+    const cols = Math.ceil(rect.width / fontSize);
+    const rows = Math.ceil(rect.height / (fontSize * 1.3));
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const maxRadius = rect.width / 2;
+
+    ctx.font = `${fontSize}px 'JetBrains Mono', monospace`;
+    ctx.textAlign = 'center';
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        // Only render ~30% of cells for a scattered look
+        if (Math.random() > 0.3) continue;
+
+        const charX = col * fontSize + fontSize / 2;
+        const charY = row * fontSize * 1.3 + fontSize;
+
+        // Circular mask
+        const dx = charX - centerX;
+        const dy = charY - centerY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > maxRadius) continue;
+
+        const distAlpha = 1 - (dist / maxRadius) * 0.6;
+        const blues = ['#00d4ff', '#00b8e6', '#0099cc', '#33ddff', '#1ab3e8'];
+        ctx.fillStyle = blues[Math.floor(Math.random() * blues.length)];
+        ctx.globalAlpha = distAlpha * (0.15 + Math.random() * 0.2);
+        ctx.fillText(Math.random() > 0.5 ? '1' : '0', charX, charY);
+      }
+    }
+
+    // On hover, render a brighter focused area around the cursor
     if (this.isHovering) {
       const radius = 70;
-      const fontSize = 10;
-      const cols = Math.ceil((radius * 2) / fontSize);
-      const rows = Math.ceil((radius * 2) / (fontSize * 1.2));
+      const hCols = Math.ceil((radius * 2) / fontSize);
+      const hRows = Math.ceil((radius * 2) / (fontSize * 1.2));
 
-      ctx.font = `${fontSize}px 'JetBrains Mono', monospace`;
-      ctx.textAlign = 'center';
-
-      for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < cols; col++) {
+      for (let row = 0; row < hRows; row++) {
+        for (let col = 0; col < hCols; col++) {
           const charX = this.mousePos.x - radius + col * fontSize + fontSize / 2;
           const charY = this.mousePos.y - radius + row * fontSize * 1.2 + fontSize;
 
-          // Check if within circular radius
           const dx = charX - this.mousePos.x;
           const dy = charY - this.mousePos.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
           if (dist < radius) {
             const alpha = (1 - dist / radius) * 0.9;
-            const colors = ['#00d4ff', '#a855f7', '#10b981'];
+            const colors = ['#00d4ff', '#00b8e6', '#0099cc', '#33ddff', '#66e5ff'];
             ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
             ctx.globalAlpha = alpha;
             ctx.fillText(Math.random() > 0.5 ? '1' : '0', charX, charY);
           }
         }
       }
-      ctx.globalAlpha = 1;
     }
 
+    ctx.globalAlpha = 1;
     this.binaryAnimId = requestAnimationFrame(this.animateBinary);
   };
 

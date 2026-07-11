@@ -44,11 +44,14 @@ gsap.registerPlugin(ScrollTrigger);
     RocketScrollComponent,
   ],
   template: `
+    <!-- Skip to main content link for keyboard/screen reader users -->
+    <a class="skip-to-content" href="#main-content">Skip to main content</a>
+
     <!-- Loading Screen -->
     <app-loader *ngIf="isLoading" (loadingComplete)="onLoadingComplete()"></app-loader>
 
     <!-- SVG Defs for loader gradient -->
-    <svg width="0" height="0" style="position:absolute">
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
       <defs>
         <linearGradient id="loaderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stop-color="#00d4ff" />
@@ -57,28 +60,28 @@ gsap.registerPlugin(ScrollTrigger);
       </defs>
     </svg>
 
-    <app-cursor></app-cursor>
-    <app-particles></app-particles>
+    <app-cursor aria-hidden="true"></app-cursor>
+    <app-particles aria-hidden="true"></app-particles>
     <app-solar-nav></app-solar-nav>
-    <app-rocket-scroll></app-rocket-scroll>
+    <app-rocket-scroll aria-hidden="true"></app-rocket-scroll>
     <app-navbar></app-navbar>
 
     <!-- Scroll progress bar -->
-    <div class="scroll-progress-bar">
+    <div class="scroll-progress-bar" role="progressbar" [attr.aria-valuenow]="scrollProgress" aria-valuemin="0" aria-valuemax="100" aria-label="Page scroll progress">
       <div class="scroll-progress-fill" [style.width]="scrollProgress + '%'"></div>
     </div>
 
-    <!-- Parallax background layers -->
-    <div class="parallax-grid"></div>
-    <div class="parallax-glow glow-1"></div>
-    <div class="parallax-glow glow-2"></div>
-    <div class="parallax-glow glow-3"></div>
+    <!-- Parallax background layers (decorative) -->
+    <div class="parallax-grid" aria-hidden="true"></div>
+    <div class="parallax-glow glow-1" aria-hidden="true"></div>
+    <div class="parallax-glow glow-2" aria-hidden="true"></div>
+    <div class="parallax-glow glow-3" aria-hidden="true"></div>
 
-    <main>
+    <main id="main-content">
       <app-hero></app-hero>
 
       <!-- Animated divider -->
-      <div class="section-divider">
+      <div class="section-divider" aria-hidden="true">
         <div class="divider-line"></div>
         <span class="divider-icon">◆</span>
         <div class="divider-line"></div>
@@ -88,7 +91,7 @@ gsap.registerPlugin(ScrollTrigger);
       <app-tech-stack></app-tech-stack>
 
       <!-- Infinite scrolling marquee -->
-      <div class="tech-marquee">
+      <div class="tech-marquee" aria-hidden="true">
         <div class="marquee-track">
           <div class="marquee-content">
             <span *ngFor="let item of marqueeItems" class="marquee-item">
@@ -113,13 +116,13 @@ gsap.registerPlugin(ScrollTrigger);
 
     <!-- Back to top button -->
     <button class="back-to-top" [class.visible]="showBackToTop" (click)="scrollToTop()" aria-label="Back to top">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M18 15l-6-6-6 6"/>
       </svg>
     </button>
 
     <!-- Easter Egg -->
-    <div *ngIf="easterEggActive" class="easter-egg-overlay">
+    <div *ngIf="easterEggActive" class="easter-egg-overlay" role="alert">
       <div class="easter-egg-content">
         <h1 class="gradient-text-animated">Building the Future with Code 🚀</h1>
       </div>
@@ -132,6 +135,30 @@ gsap.registerPlugin(ScrollTrigger);
     :host {
       display: block;
       position: relative;
+    }
+
+    /* Skip to content - accessibility */
+    .skip-to-content {
+      position: fixed;
+      top: -100%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100000;
+      padding: 12px 24px;
+      background: #00d4ff;
+      color: #0a0a0f;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 0 0 8px 8px;
+      text-decoration: none;
+      transition: top 0.3s ease;
+
+      &:focus {
+        top: 0;
+        outline: 2px solid #a855f7;
+        outline-offset: 2px;
+      }
     }
 
     /* Scroll progress bar */
@@ -364,6 +391,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit(): void {
     document.documentElement.classList.add('dark');
+    // Prevent browser from restoring previous scroll position
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
   }
 
   onLoadingComplete(): void {

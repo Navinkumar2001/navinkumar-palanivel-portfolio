@@ -164,7 +164,7 @@ interface JsonLine {
 
         <div class="stats-grid">
           <div class="stat-card glass" *ngFor="let stat of stats; let i = index">
-            <div class="stat-icon">{{ stat.icon }}</div>
+            <div class="stat-icon" [innerHTML]="getSafeStatIcon(stat.icon)"></div>
             <span class="stat-number" [attr.data-target]="stat.value">0</span>
             <span class="stat-suffix">{{ stat.suffix }}</span>
             <span class="stat-label">{{ stat.label }}</span>
@@ -875,8 +875,12 @@ interface JsonLine {
 
       .stat-icon {
         font-size: 1.5rem;
-        margin-bottom: 12px;
-        display: block;
+        margin: 0 auto 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
         transition: transform 0.3s ease;
       }
 
@@ -1115,13 +1119,17 @@ export class AboutComponent implements AfterViewInit, OnDestroy {
   ];
 
   stats = [
-    { value: 3, suffix: '+', label: 'Years Experience', icon: '🚀' },
-    { value: 10, suffix: '+', label: 'Enterprise Modules', icon: '📦' },
-    { value: 100, suffix: 'K+', label: 'Data Records Processed', icon: '⚡' },
-    { value: 50, suffix: '+', label: 'Features Delivered', icon: '✨' },
+    { value: 3, suffix: '+', label: 'Years Experience', icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>' },
+    { value: 20, suffix: '+', label: 'Enterprise Modules', icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><path d="M7 8h2m2 0h2m2 0h2"/><path d="M7 11h10"/></svg>' },
+    { value: 100, suffix: 'K+', label: 'Data Records Processed', icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>' },
+    { value: 50, suffix: '+', label: 'Features Delivered', icon: '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' },
   ];
 
   activeTooltipIndex: number | null = null;
+
+  getSafeStatIcon(icon: string): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(icon);
+  }
 
   constructor(private ngZone: NgZone, private sanitizer: DomSanitizer) {
     this.jsonLines = this.rawJsonLines.map(line => ({

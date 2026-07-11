@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Redirecting...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      margin: 0;
+      background: #0a0a0f;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+    }
+    .code {
+      font-size: 8rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #00d4ff, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+      margin-bottom: 16px;
+    }
+    h1 { font-size: 1.5rem; margin: 0 0 12px; color: rgba(255,255,255,0.9); }
+    p { color: rgba(255,255,255,0.5); margin: 0 0 24px; }
+    a {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: rgba(0, 212, 255, 0.1);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      border-radius: 8px;
+      color: #00d4ff;
+      font-size: 0.9rem;
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+    a:hover {
+      background: rgba(0, 212, 255, 0.15);
+      border-color: rgba(0, 212, 255, 0.6);
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+    }
+  </style>
+  <script>
+    // Redirect to main page after 3 seconds
+    setTimeout(function() {
+      window.location.href = '/navinkumar-palanivel-portfolio/';
+    }, 3000);
+  </script>
+</head>
+<body>
+  <div>
+    <div class="code">404</div>
+    <h1>Page Not Found</h1>
+    <p>Redirecting to portfolio in 3 seconds...</p>
+    <a href="/navinkumar-palanivel-portfolio/">← Back to Portfolio</a>
+  </div>
+</body>
+</html>

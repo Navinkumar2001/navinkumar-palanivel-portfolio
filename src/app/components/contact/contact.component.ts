@@ -1,6 +1,7 @@
 import { Component, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import emailjs from '@emailjs/browser';
 import { environment } from '../../../environments/environment';
 
@@ -26,7 +27,7 @@ import { environment } from '../../../environments/environment';
               <div class="cyber-corner bottom-left"></div>
               <div class="cyber-corner bottom-right"></div>
 
-              <div class="info-icon">{{ info.icon }}</div>
+              <div class="info-icon" [innerHTML]="getSafeIcon(info.icon)"></div>
               <div>
                 <span class="info-label">{{ info.label }}</span>
                 <a [href]="info.href" class="info-value" target="_blank" rel="noopener">{{ info.value }}</a>
@@ -170,6 +171,15 @@ import { environment } from '../../../environments/environment';
 
       .info-icon {
         font-size: 1.5rem;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 212, 255, 0.08);
+        border-radius: 12px;
+        border: 1px solid rgba(0, 212, 255, 0.15);
+        flex-shrink: 0;
       }
 
       .info-label {
@@ -444,6 +454,8 @@ import { environment } from '../../../environments/environment';
 export class ContactComponent implements AfterViewInit {
   @ViewChild('formRef') formRef!: ElementRef<HTMLFormElement>;
 
+  constructor(private sanitizer: DomSanitizer) {}
+
   name = '';
   email = '';
   message = '';
@@ -462,11 +474,15 @@ export class ContactComponent implements AfterViewInit {
   private readonly EMAILJS_PUBLIC_KEY = environment.emailJs.publicKey;
 
   contactInfo = [
-    { icon: '📧', label: 'Email', value: 'navinkumar.it.2001@gmail.com', href: 'mailto:navinkumar.it.2001@gmail.com' },
-    { icon: '📱', label: 'Phone', value: '+91 7397063122', href: 'tel:+917397063122' },
-    { icon: '💼', label: 'LinkedIn', value: 'navinkumar-palanivel', href: 'https://linkedin.com/in/navinkumar-palanivel-fullstack-dev' },
-    { icon: '📍', label: 'Location', value: 'Chennai, India', href: '#' },
+    { icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>', label: 'Email', value: 'navinkumar.it.2001@gmail.com', href: 'mailto:navinkumar.it.2001@gmail.com' },
+    { icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>', label: 'Phone', value: '+91 7397063122', href: 'tel:+917397063122' },
+    { icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>', label: 'LinkedIn', value: 'navinkumar-palanivel', href: 'https://linkedin.com/in/navinkumar-palanivel-fullstack-dev' },
+    { icon: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>', label: 'Location', value: 'Chennai, India', href: '#' },
   ];
+
+  getSafeIcon(icon: string): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(icon);
+  }
 
   ngAfterViewInit(): void {
     document.querySelectorAll('.info-card').forEach((card) => {
