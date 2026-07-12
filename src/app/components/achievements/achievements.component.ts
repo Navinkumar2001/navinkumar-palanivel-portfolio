@@ -74,7 +74,7 @@ gsap.registerPlugin(ScrollTrigger);
                 <span class="mini-label">Years in Industry</span>
               </div>
               <div class="mini-stat">
-                <span class="mini-number">10+</span>
+                <span class="mini-number">20+</span>
                 <span class="mini-label">Enterprise Modules</span>
               </div>
               <div class="mini-stat">

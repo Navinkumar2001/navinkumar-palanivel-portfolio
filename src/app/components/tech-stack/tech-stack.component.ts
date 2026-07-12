@@ -174,11 +174,13 @@ interface RadarSkill {
       width: 100%;
       max-width: 400px;
       margin: 0 auto;
+      padding-left: 20px;
     }
 
     .radar-svg {
       width: 100%;
       height: auto;
+      overflow: visible;
     }
 
     .radar-ring {
@@ -424,12 +426,12 @@ export class TechStackComponent implements AfterViewInit, OnDestroy {
 
   // Radar chart data — proficiency per category
   radarSkills: RadarSkill[] = [
-    { label: 'Frontend', value: 92, color: '#00d4ff' },
-    { label: 'Backend', value: 78, color: '#a855f7' },
-    { label: 'Database', value: 72, color: '#10b981' },
-    { label: 'DevOps/Tools', value: 75, color: '#f59e0b' },
-    { label: 'AI/ML', value: 68, color: '#ec4899' },
-    { label: 'Architecture', value: 82, color: '#06b6d4' },
+    { label: 'Frontend', value: 95, color: '#00d4ff' },
+    { label: 'Backend', value: 75, color: '#a855f7' },
+    { label: 'Database', value: 70, color: '#10b981' },
+    { label: 'AI/ML', value: 65, color: '#ec4899' },
+    { label: 'Architecture', value: 70, color: '#f59e0b' },
+    { label: 'AI Tools', value: 80, color: '#f50bd6' },
   ];
 
   // Radar computed values

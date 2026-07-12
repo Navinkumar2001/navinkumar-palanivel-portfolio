@@ -371,3 +371,51 @@ body::before {
 .glass:hover .cyber-corner.top-right { transform: translate(2px, -2px); }
 .glass:hover .cyber-corner.bottom-left { transform: translate(-2px, 2px); }
 .glass:hover .cyber-corner.bottom-right { transform: translate(2px, 2px); }
+
+/* ===== Print Styles ===== */
+@media print {
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  body::before,
+  body::after {
+    display: none !important;
+  }
+
+  .navbar,
+  .parallax-grid,
+  .parallax-glow,
+  .scroll-progress-bar,
+  .back-to-top,
+  app-cursor,
+  app-particles,
+  app-solar-nav,
+  app-rocket-scroll,
+  app-loader,
+  app-terminal,
+  app-hero,
+  app-about,
+  app-tech-stack,
+  app-experience,
+  app-projects,
+  app-achievements,
+  app-services,
+  app-contact,
+  app-footer,
+  .tech-marquee,
+  .section-divider,
+  .easter-egg-overlay,
+  .skip-to-content {
+    display: none !important;
+  }
+
+  app-resume {
+    display: block !important;
+  }
+
+  .section-padding::before {
+    display: none !important;
+  }
+}
