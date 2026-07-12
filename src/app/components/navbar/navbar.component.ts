@@ -13,20 +13,13 @@ import { CommonModule } from '@angular/common';
         </a>
 
         <div class="nav-links" [class.active]="menuOpen">
-          <a *ngFor="let link of navLinks" 
-             [href]="'#' + link.id" 
+          <a *ngFor="let link of navLinks"
+             [href]="'#' + link.id"
              class="nav-link"
+             [class.active]="activeSection === link.id"
              (click)="closeMenu()">
             {{ link.label }}
           </a>
-
-          <!-- Theme toggle -->
-          <button class="theme-toggle" (click)="toggleTheme()" [attr.aria-label]="'Toggle theme'">
-            <span class="toggle-icon" [class.neon]="isNeonMode">
-              {{ isNeonMode ? '✦' : '◯' }}
-            </span>
-            <span class="toggle-label">{{ isNeonMode ? 'Neon' : 'Clean' }}</span>
-          </button>
 
           <a href="#contact" class="btn-primary magnetic-btn nav-cta" (click)="closeMenu()">
             <span>Let's Talk</span>
@@ -104,48 +97,16 @@ import { CommonModule } from '@angular/common';
         color: #fff;
         &::after { width: 100%; }
       }
+
+      &.active {
+        color: #00d4ff;
+        &::after { width: 100%; }
+      }
     }
 
     .nav-cta {
       padding: 10px 24px;
       font-size: 0.85rem;
-    }
-
-    .theme-toggle {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 14px;
-      border-radius: 50px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: rgba(255, 255, 255, 0.03);
-      color: rgba(255, 255, 255, 0.6);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-size: 0.8rem;
-
-      &:hover {
-        border-color: rgba(0, 212, 255, 0.3);
-        background: rgba(0, 212, 255, 0.05);
-        color: #00d4ff;
-      }
-
-      .toggle-icon {
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
-
-        &.neon {
-          color: #00d4ff;
-          text-shadow: 0 0 8px #00d4ff;
-        }
-      }
-
-      .toggle-label {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.65rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
     }
 
     .menu-toggle {
@@ -205,7 +166,7 @@ export class NavbarComponent {
   isScrolled = false;
   isHidden = false;
   menuOpen = false;
-  isNeonMode = true;
+  activeSection = '';
   private lastScrollY = 0;
 
   navLinks = [
@@ -223,6 +184,7 @@ export class NavbarComponent {
     this.isScrolled = scrollY > 50;
     this.isHidden = scrollY > this.lastScrollY && scrollY > 200;
     this.lastScrollY = scrollY;
+    this.updateActiveSection();
   }
 
   toggleMenu(): void {
@@ -233,25 +195,18 @@ export class NavbarComponent {
     this.menuOpen = false;
   }
 
-  toggleTheme(): void {
-    this.isNeonMode = !this.isNeonMode;
-    const root = document.documentElement;
-    if (this.isNeonMode) {
-      root.style.setProperty('--neon-blue', '#00d4ff');
-      root.style.setProperty('--neon-purple', '#a855f7');
-      root.style.setProperty('--neon-pink', '#ec4899');
-      root.style.setProperty('--dark-bg', '#0a0a0f');
-      root.style.setProperty('--dark-surface', '#0f0f1a');
-      root.style.setProperty('--glass-bg', 'rgba(255, 255, 255, 0.03)');
-      root.style.setProperty('--glass-border', 'rgba(255, 255, 255, 0.08)');
-    } else {
-      root.style.setProperty('--neon-blue', '#0ea5e9');
-      root.style.setProperty('--neon-purple', '#8b5cf6');
-      root.style.setProperty('--neon-pink', '#e11d48');
-      root.style.setProperty('--dark-bg', '#0f172a');
-      root.style.setProperty('--dark-surface', '#1e293b');
-      root.style.setProperty('--glass-bg', 'rgba(255, 255, 255, 0.05)');
-      root.style.setProperty('--glass-border', 'rgba(255, 255, 255, 0.1)');
+  private updateActiveSection(): void {
+    const offset = 150;
+    for (let i = this.navLinks.length - 1; i >= 0; i--) {
+      const section = document.getElementById(this.navLinks[i].id);
+      if (section) {
+        const rect = section.getBoundingClientRect();
+        if (rect.top <= offset) {
+          this.activeSection = this.navLinks[i].id;
+          return;
+        }
+      }
     }
+    this.activeSection = '';
   }
 }

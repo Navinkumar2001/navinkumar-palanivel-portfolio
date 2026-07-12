@@ -10,6 +10,7 @@ import { ExperienceComponent } from './components/experience/experience.componen
 import { ProjectsComponent } from './components/projects/projects.component';
 import { AchievementsComponent } from './components/achievements/achievements.component';
 import { ServicesComponent } from './components/services/services.component';
+import { ResumeComponent } from './components/resume/resume.component';
 import { ContactComponent } from './components/contact/contact.component';
 import { FooterComponent } from './components/footer/footer.component';
 import { CursorComponent } from './components/cursor/cursor.component';
@@ -34,6 +35,7 @@ gsap.registerPlugin(ScrollTrigger);
     ProjectsComponent,
     AchievementsComponent,
     ServicesComponent,
+    ResumeComponent,
     ContactComponent,
     FooterComponent,
     CursorComponent,
@@ -109,6 +111,7 @@ gsap.registerPlugin(ScrollTrigger);
       <app-experience></app-experience>
       <app-projects></app-projects>
       <app-achievements></app-achievements>
+      <app-resume></app-resume>
       <app-services></app-services>
       <app-contact></app-contact>
     </main>
